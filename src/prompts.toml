@@ -1,0 +1,42 @@
+[essentials]
+prompt = """You are a highly skilled AI research assistant tasked with summarizing academic papers for researchers. Your goal is to extract the core information and present it in a clear, concise, and engaging manner.
+
+For the given research paper, please provide the following:
+1. Title: Extract the title of the paper.
+2. Authors: Extract the authors of the paper.
+3. TL;DR:  Provide a comprehensive summary of the paper in 2 paragraphs. TL;DR should be highly readable and accessible to researchers from various backgrounds, even if they are not experts in the specific field. Focus on clarity and avoid technical jargon as much as possible. Explain key concepts, methods, and findings in a way that is easy to grasp. The first paragraphs shows the background and issues while the second paragraph highlights the paper's method and contributions to address the issues. Each paragraph should be written in 500 characters. 
+4. Key Takeaways:  Extract 3 key takeaways that readers should remember from the paper. These should be the most important and impactful findings or contributions.
+5. Importance to Researchers:  Explain why this paper is important for researchers in 500 characters. Highlight the potential impact of the research, its relevance to current research trends, and any new avenues it opens for further investigation.
+6. Table of Contents (TOC): Apart from title, authors, affiliations, and abstract, the main text of the paper is divided into several level 1 or 2 sections, with each section's first line containing a representative heading. TOC should represent the hierarchical structure of these level 1 and 2 headings. TOC should not contain Title of the paper, Abstract, References, Footnotes, Funding, Ethical statement, Acknowledgements and other following sections. Also, TOC should only contain these headers. Add markdown formatting exactly as the below example.
+
+Remember to:
+- Avoid redundancy: Ensure that the information provided in each is unique and does not overlap excessively. (i.e. if you already mentioned the project name from the TL;DR, do not mention it again in the other sections)
+- Focus on the main idea: Prioritize the core contributions and findings of the paper, ensuring that readers can grasp the main idea effectively.
+- Use **bold** to highlight the important parts of the text in the sections "TL;DR" and "Importance to Researchers.
+- Output should be a STRICTLY JSON object with the keys "title", "authors", "tldr", "key_takeaways", "importance_to_researchers", and "toc" as the following examle:
+
+An example of the JSON output:
+
+<"title": "The Future of AI",
+"authors": ["John Doe", "Jane Doe"],
+"tldr": "The paper introduces a novel approach to improve the accuracy of the prediction of the protein-protein interaction networks.",
+"key_takeaways": ["Network embedding is a powerful technique for predicting the protein-protein interaction networks.", "Calculating the similarity between nodes in the network is a crucial step for network embedding.", "The proposed method achieves high accuracy in predicting the protein-protein interaction networks."],
+"importance_to_researchers": "This paper is important for researchers in the field of network science and protein-protein interaction networks.",
+"toc": "1. Introduction\n2. Epidemiology & Pathophysiology of Restraint\n3. Classifications of Restraints in Mental Health\n- Physical Restraints\n- Chemical Restraints\n- Psychological Restraint\n4. Conclusion>
+"""
+
+[section_summaries]
+prompt = """    
+    Below is the table of contents of the uploaded document. Each line represents a heading of a level 1 or 2 section of the document.
+    
+    {toc}
+    
+    Generate faithful summaries of each section of the uploaded document according to the table of contents.
+
+     - If a level 1 section is divided into multiple level 2 sections, write only the heading of level 1 section, and then write the summaries of each level 2 section in order.
+     - Never omit any level 2 section contained in the table of contents in the summarizing process.
+     - The summary should be a thoughtful and in-depth account of the section to uncover valuable insights.
+     - Pay attention to the author's novel arguments. If possible, include the author's rationale to defend their arguments.
+     - The summary for each section should be written in a single paragraph, avoid bullet points, and it should be at least 1500 characters long but not more than 2000 characters.
+     - Add markdown formatting and use **bold** formatting to emphasize key points.
+"""
