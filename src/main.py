@@ -1,22 +1,22 @@
 # %%
 import time
 import toml
-import sqlite3
 from pathlib import Path
-from dotenv import load_dotenv
+from instructor.exceptions import InstructorRetryException
+# from dotenv import load_dotenv
 import instructor
 import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types.file import File
-from pydantic import BaseModel, Field
 
+from classes import Essentials, SectionSummaries, SummaryDB
+from db import engine, save_summary, get_summary, write_summary, initialize_db
+from argparse import ArgumentParser
+# load_dotenv()
 
-load_dotenv()
+MODEL_NAME = "gemini-1.5-flash"
+PROMPTS_PATH = Path("src/prompts.toml")
+MAX_RETRIES = 3
 
-MODEL_NAME = "gemini-exp-1114"
-PDF_PATH = Path("../docs/Fugure of ChatGPT.pdf")
-PROMPTS_PATH = Path("./prompts.toml")
-GENAI_HANDLES_PATH = Path("./genai_handles.toml")
-DB_PATH = Path("./summaries.db")
 with open(PROMPTS_PATH, "r") as f:
     prompts = toml.load(f)
 
@@ -31,130 +31,88 @@ client = instructor.from_gemini(
         model_name=MODEL_NAME,
     )
 )
-# %%
 
-
-# Define your output structure
-class Essentials(BaseModel):
-    title: str = Field(description="The title of the document")
-    authors: list[str] = Field(description="The authors of the document")
-    tldr: str = Field(description="A TLDR summary of the document")
-    key_takeaways: list[str] = Field(description="A list of key takeaways from the document")
-    important_point: str = Field(description="A important point from the document")
-    toc: str = Field(description="A table of contents of the document")
-
-
-class SectionSummaries(BaseModel):
-    summaries: list[str] = Field(description="A list of summaries of the sections in a document")
-
-
-def log_uploaded_file(pdf_path: Path, file: File, genai_handles_path: Path):
-    with open(genai_handles_path, "w") as f:
-        toml.dump({pdf_path.name: {"genai_handle": file.name}}, f)
-
-
-def check_genai_handle(pdf_path: Path, toml_path: Path):
-    with open(toml_path, "r") as f:
-        genai_handles = toml.load(f)
-
-    section = genai_handles.get(pdf_path.name, None)
-    file_handle = section["genai_handle"] if section else None
-
-    return file_handle
-
-
-def upload_pdf(pdf_path: Path, genai_handles_path: Path):
-    def _upload(pdf_path: Path):
-        file = genai.upload_file(pdf_path)
-        while file.state != File.State.ACTIVE:
-            time.sleep(1)
-            file = genai.get_file(file.name)
-
-        print("File is now ready\n")
-        log_uploaded_file(pdf_path, file, genai_handles_path)
-        return file
-
-    file_handle = check_genai_handle(pdf_path, genai_handles_path)
-
-    if file_handle:
-        print("File has been previously uploaded, trying to fetch\n")
-        try:
-            file = genai.get_file(file_handle)
-        except Exception as e:
-            print(f"Failed to fetch file: {e}\n")
-            file = _upload(pdf_path)
-    else:
-        file = _upload(pdf_path)
-
+def upload_pdf(pdf_path: Path) -> File:
+    file = genai.upload_file(pdf_path)
+    while file.state != File.State.ACTIVE:
+        time.sleep(1)
+        file = genai.get_file(file.name)
     return file
 
 
-def summarize(file: File):
-    essentials = client.chat.completions.create(
-        messages=[
-            {"role": "user", "content": [ESSENTIALS_PROMPT, file]},
-        ],
-        response_model=Essentials,
-    )
+def summarize(pdf_path: Path) -> SummaryDB:
+    
+    pdf_stem = pdf_path.stem
+    
+    if summary_db := get_summary(pdf_stem, engine):
+        print("Summary already exists in database")
+        return {'summary': summary_db, 'exists': True}
+    
+    else:
+        print("Summary does not exist in database, creating new summary")
+        file = upload_pdf(pdf_path)
+    
+        try:
+            essentials = client.chat.completions.create(
+                messages=[
+                {"role": "user", "content": [ESSENTIALS_PROMPT, file]},
+                ],
+                response_model=Essentials,
+                max_retries=MAX_RETRIES
+            )
+        except InstructorRetryException as e:
+            print(f"Retry Error: {e}\n\n")
+            return {'summary': None, 'exists': True}
 
-    section_summaries_prompt = SECTION_SUMMARIES_PROMPT.format(toc=essentials.toc)
+        section_summaries_prompt = SECTION_SUMMARIES_PROMPT.format(toc=essentials.toc)
 
-    section_summaries = client.chat.completions.create(
-        messages=[
-            {"role": "user", "content": [section_summaries_prompt, file]},
-        ],
-        response_model=SectionSummaries,
-    )
+        try:
+            section_summaries = client.chat.completions.create(
+                messages=[
+                {"role": "user", "content": [section_summaries_prompt, file]},
+            ],
+            response_model=SectionSummaries,
+                max_retries=MAX_RETRIES
+            )
+        except InstructorRetryException as e:
+            print(f"Retry Error: {e}\n\n")
+            return {'summary': None, 'exists': True}
+        summary_db = SummaryDB(pdf_stem=pdf_stem,
+                            file_handle=file.name, 
+                            **essentials.model_dump(), 
+                            **section_summaries.model_dump())
 
-    return {"essentials": essentials, "section_summaries": section_summaries}
-
-
-def format_summary(summary: dict):
-    modified_summaries = [summary.replace("\\n", "\n") for summary in summary["section_summaries"].summaries]
-
-    return f"""
-    # {summary["essentials"].title}\n\n
-    #### {", ".join(summary["essentials"].authors)}\n\n
-    ### TL;DR\n
-    {summary["essentials"].tldr}\n\n
-    ### Key Takeaways\n
-    {summary["key_takeaways"]}\n\n
-    ### Important Point\n
-    {summary["important_point"]}\n\n
-    - - -
-    {"\n\n".join(modified_summaries)}
-    """
-
-
-def write_summaries(summary: dict, pdf_path: Path):
-    with open(pdf_path.stem.with_suffix("_summary.md"), "w") as f:
-        f.write(format_summary(summary))
-
-
-def save_sqlite(pdf_path: Path, summary: dict, db_path: Path = DB_PATH):
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-
-    pdf_hash = hash(pdf_path.stem)
-
-    # Create table if it doesn't exist
-    c.execute("""CREATE TABLE IF NOT EXISTS summaries
-                     (pdf_hash TEXT PRIMARY KEY, summary TEXT)""")
-
-    # Insert or replace the summary data
-    c.execute(
-        """INSERT OR REPLACE INTO summaries (pdf_hash, summary) VALUES (?, ?)""",
-        (pdf_hash, format_summary(summary)),
-    )
-
-    # Commit the transaction and close the connection
-    conn.commit()
-    conn.close()
+        return {'summary': summary_db, 'exists': False}
 
 
-def main():
-    file = upload_pdf(PDF_PATH, GENAI_HANDLES_PATH)
+def directory_summarize(directory: Path):
+    for pdf_path in directory.glob("*.pdf"):
+        print(f"Summarizing {pdf_path.stem}")
+        payload = summarize(Path(pdf_path))
+        if not payload['exists']:
+            save_summary(payload['summary'], engine)
+            write_summary(payload['summary'], pdf_path)
 
-    summaries = summarize(file)
 
-    write_summaries(summaries, PDF_PATH)
+def main(pdf_path: Path | None, directory: Path | None):
+
+    if directory:
+        directory_summarize(directory)
+    else:
+        payload = summarize(pdf_path)
+        if not payload['exists']:
+            save_summary(payload['summary'], engine)
+            write_summary(payload['summary'], pdf_path)
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('pdf_path', nargs='?', type=str)
+    parser.add_argument("--directory", "-d", nargs='?', type=str)
+    
+    args = parser.parse_args()
+    
+    pdf_path = Path(args.pdf_path) if args.pdf_path else None
+    directory = Path(args.directory) if args.directory else None
+    initialize_db(engine)
+   
+    main(pdf_path, directory)

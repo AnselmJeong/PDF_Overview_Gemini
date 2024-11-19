@@ -13,5 +13,6 @@ dependencies = [
     "jupyterlab-widgets>=3.0.13",
     "ollama>=0.3.3",
     "python-dotenv>=1.0.1",
+    "sqlmodel>=0.0.22",
     "toml>=0.10.2",
 ]

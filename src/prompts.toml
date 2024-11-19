@@ -13,15 +13,15 @@ Remember to:
 - Avoid redundancy: Ensure that the information provided in each is unique and does not overlap excessively. (i.e. if you already mentioned the project name from the TL;DR, do not mention it again in the other sections)
 - Focus on the main idea: Prioritize the core contributions and findings of the paper, ensuring that readers can grasp the main idea effectively.
 - Use **bold** to highlight the important parts of the text in the sections "TL;DR" and "Importance to Researchers.
-- Output should be a STRICTLY JSON object with the keys "title", "authors", "tldr", "key_takeaways", "importance_to_researchers", and "toc" as the following examle:
+- Output should be a STRICTLY JSON object with the keys "title", "authors", "tldr", "key_takeaways", "important_point", and "toc" as the following examle:
 
-An example of the JSON output:
+This is JUST AN EXAMPLE of the JSON output. Do not return this as the response:
 
 <"title": "The Future of AI",
 "authors": ["John Doe", "Jane Doe"],
 "tldr": "The paper introduces a novel approach to improve the accuracy of the prediction of the protein-protein interaction networks.",
 "key_takeaways": ["Network embedding is a powerful technique for predicting the protein-protein interaction networks.", "Calculating the similarity between nodes in the network is a crucial step for network embedding.", "The proposed method achieves high accuracy in predicting the protein-protein interaction networks."],
-"importance_to_researchers": "This paper is important for researchers in the field of network science and protein-protein interaction networks.",
+"important_point": "This paper is important for researchers in the field of network science and protein-protein interaction networks.",
 "toc": "1. Introduction\n2. Epidemiology & Pathophysiology of Restraint\n3. Classifications of Restraints in Mental Health\n- Physical Restraints\n- Chemical Restraints\n- Psychological Restraint\n4. Conclusion>
 """
 
