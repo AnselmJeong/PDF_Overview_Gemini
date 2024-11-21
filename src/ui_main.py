@@ -74,9 +74,6 @@ with Session(engine) as session:
             # with open(pdf_path, "rb") as file:
             #     pdf_content = file.read()
             pdf_content = pdf_path.read_bytes()
-
-        
-        
         
 
         with col1.container(height=SCROLL_HEIGHT):
@@ -89,16 +86,8 @@ with Session(engine) as session:
                 )
 
         with col2.container(height=SCROLL_HEIGHT):
-            sbutton = st.button("Summarize Again")
             md_container = st.container()
-            
-            if sbutton:
-                md_container.empty()
-                info_container.info(f"Summarizing {file_name}")
-                summary_content = main(pdf_path, write_md=False)
-                summary_content = format_summary(summary_content)
-                md_container.markdown(summary_content)
-            elif summary_content:
+            if summary_content:
                 md_container.markdown(summary_content)
             else:
                 md_container.markdown("No summary found")
