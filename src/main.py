@@ -13,7 +13,7 @@ from db import engine, save_summary, get_summary, write_summary, initialize_db
 from argparse import ArgumentParser
 # load_dotenv()
 
-MODEL_NAME = "gemini-1.5-flash"
+MODEL_NAME = "gemini-1.5-pro"
 PROMPTS_PATH = Path("src/prompts.toml")
 MAX_RETRIES = 3
 
@@ -94,7 +94,7 @@ def directory_summarize(directory: Path):
             write_summary(payload['summary'], pdf_path)
 
 
-def main(pdf_path: Path | None, directory: Path | None):
+def main(pdf_path: Path | None = None, directory: Path | None = None, write_md: bool = False):
 
     if directory:
         directory_summarize(directory)
@@ -102,12 +102,15 @@ def main(pdf_path: Path | None, directory: Path | None):
         payload = summarize(pdf_path)
         if not payload['exists']:
             save_summary(payload['summary'], engine)
-            write_summary(payload['summary'], pdf_path)
+            if write_md:
+                write_summary(payload['summary'], pdf_path)
+    return payload['summary']
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('pdf_path', nargs='?', type=str)
     parser.add_argument("--directory", "-d", nargs='?', type=str)
+    parser.add_argument("--write_md", "-w", action="store_true")
     
     args = parser.parse_args()
     
@@ -115,4 +118,4 @@ if __name__ == "__main__":
     directory = Path(args.directory) if args.directory else None
     initialize_db(engine)
    
-    main(pdf_path, directory)
+    main(pdf_path, directory, args.write_md)

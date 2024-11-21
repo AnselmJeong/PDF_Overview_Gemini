@@ -11,6 +11,7 @@ import re
 from db import engine, get_summary, format_summary
 from sqlmodel import Session
 from streamlit_pdf_viewer import pdf_viewer
+from main import main
 
 st.set_page_config(layout="wide")
 
@@ -27,39 +28,56 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-ROOT = "docs"
+root = ""
 SCROLL_HEIGHT = 2000
 # Create a file browser component in the sidebar
 with st.sidebar:
     st.markdown("## File Browser")
-    event = st_file_browser(
-        path=ROOT,
-        key="file_browser",
-        extentions=["pdf"],
-        show_choose_file=False,
-        show_download_file=False,
-        show_preview=False,
-        use_cache=False,
-    )
+    if root:= st.text_input("PDF Directory", placeholder="Directory to browse"):
+        event = st_file_browser(
+            path=root,
+            key="file_browser",
+            extentions=["pdf"],
+            show_choose_file=False,
+            show_download_file=False,
+            show_preview=False,
+            use_cache=False,
+        )
+    else:
+        st.warning("Please enter a directory to browse")
+        event = None
 
 pdf_content = None
 content = None
 
+info_container = st.container()
+col1, col2 = st.columns([1.5, 1])
 # Main content area
 with Session(engine) as session:
     if event and event["type"] == "SELECT_FILE":
-        pdf_path = Path(ROOT, event["target"]["path"])
+        pdf_path = Path(root, event["target"]["path"])
         file_name = pdf_path.stem
         # pdf_path = file_path.parent / (file_name.replace('_overview', '') + '.pdf')
         if file_name:
-            summary_content = format_summary(get_summary(file_name, engine))
+            if raw_summary := get_summary(file_name, engine):
+                summary_content = format_summary(raw_summary)
+                
+            else:
+                info_container.info(f"Summarizing {file_name}")
+                summary_content = main(pdf_path, write_md=False)
+                summary_content = format_summary(summary_content)
+                
+            
+            
             summary_content = re.sub(r"\*\*(.*?)\*\*", r":orange[\1]", summary_content)
 
             # with open(pdf_path, "rb") as file:
             #     pdf_content = file.read()
             pdf_content = pdf_path.read_bytes()
 
-        col1, col2 = st.columns([1.5, 1])
+        
+        
+        
 
         with col1.container(height=SCROLL_HEIGHT):
             if pdf_content:
@@ -71,7 +89,16 @@ with Session(engine) as session:
                 )
 
         with col2.container(height=SCROLL_HEIGHT):
-            if summary_content:
-                st.markdown(summary_content)
+            sbutton = st.button("Summarize Again")
+            md_container = st.container()
+            
+            if sbutton:
+                md_container.empty()
+                info_container.info(f"Summarizing {file_name}")
+                summary_content = main(pdf_path, write_md=False)
+                summary_content = format_summary(summary_content)
+                md_container.markdown(summary_content)
+            elif summary_content:
+                md_container.markdown(summary_content)
             else:
-                st.markdown("No summary found")
+                md_container.markdown("No summary found")

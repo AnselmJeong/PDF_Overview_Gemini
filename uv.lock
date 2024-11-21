@@ -1368,7 +1368,6 @@ dependencies = [
     { name = "streamlit" },
     { name = "streamlit-dimensions" },
     { name = "streamlit-file-browser" },
-    { name = "streamlit-pdf-reader" },
     { name = "streamlit-pdf-viewer" },
     { name = "toml" },
     { name = "watchdog" },
@@ -1388,7 +1387,6 @@ requires-dist = [
     { name = "streamlit", specifier = ">=1.40.1" },
     { name = "streamlit-dimensions", specifier = ">=0.0.1" },
     { name = "streamlit-file-browser", specifier = ">=3.2.22" },
-    { name = "streamlit-pdf-reader", specifier = ">=0.0.5" },
     { name = "streamlit-pdf-viewer", specifier = ">=0.0.19" },
     { name = "toml", specifier = ">=0.10.2" },
     { name = "watchdog", specifier = ">=6.0.0" },
@@ -2235,18 +2233,6 @@ dependencies = [
     { name = "streamlit" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1d/41/c7a6939e9c400ba9874dfd8abbfcae17d8e8228cc43a4370098577319c11/streamlit-molstar-0.4.21.tar.gz", hash = "sha256:65ebbc554e163455685dd96e39ca503e7c2af76bab7a61ccce25e43fae0f1b40", size = 35205127 }
-
-[[package]]
-name = "streamlit-pdf-reader"
-version = "0.0.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "streamlit" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/eb/2e27dcd9db70d19401cf56d13831969d501ec81b64e3237d607a7cc3d204/streamlit_pdf_reader-0.0.5.tar.gz", hash = "sha256:803e252060ffd1a58bdb783fe78b886d3185f18b96c5492f5a1e1e7c253f1031", size = 953054 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/36/d89774e21549e625bb627887ab9bf35b637cfae188b97e4c6ba3023e3d7d/streamlit_pdf_reader-0.0.5-py3-none-any.whl", hash = "sha256:7f776badf66783ba148e823ab1c77a6aecd93a677e74c689b37c4b174b35b2e8", size = 962584 },
-]
 
 [[package]]
 name = "streamlit-pdf-viewer"

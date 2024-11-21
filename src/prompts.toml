@@ -13,16 +13,7 @@ Remember to:
 - Avoid redundancy: Ensure that the information provided in each is unique and does not overlap excessively. (i.e. if you already mentioned the project name from the TL;DR, do not mention it again in the other sections)
 - Focus on the main idea: Prioritize the core contributions and findings of the paper, ensuring that readers can grasp the main idea effectively.
 - Use **bold** to highlight the important parts of the text in the sections "TL;DR" and "Importance to Researchers.
-- Output should be a STRICTLY JSON object with the keys "title", "authors", "tldr", "key_takeaways", "important_point", and "toc" as the following examle:
-
-This is JUST AN EXAMPLE of the JSON output. Do not return this as the response:
-
-<"title": "The Future of AI",
-"authors": ["John Doe", "Jane Doe"],
-"tldr": "The paper introduces a novel approach to improve the accuracy of the prediction of the protein-protein interaction networks.",
-"key_takeaways": ["Network embedding is a powerful technique for predicting the protein-protein interaction networks.", "Calculating the similarity between nodes in the network is a crucial step for network embedding.", "The proposed method achieves high accuracy in predicting the protein-protein interaction networks."],
-"important_point": "This paper is important for researchers in the field of network science and protein-protein interaction networks.",
-"toc": "1. Introduction\n2. Epidemiology & Pathophysiology of Restraint\n3. Classifications of Restraints in Mental Health\n- Physical Restraints\n- Chemical Restraints\n- Psychological Restraint\n4. Conclusion>
+- Output should be a STRICTLY JSON object with the keys "title", "authors", "tldr", "key_takeaways", "important_point", and "toc"
 """
 
 [section_summaries]
@@ -37,6 +28,7 @@ prompt = """
      - Never omit any level 2 section contained in the table of contents in the summarizing process.
      - The summary should be a thoughtful and in-depth account of the section to uncover valuable insights.
      - Pay attention to the author's novel arguments. If possible, include the author's rationale to defend their arguments.
+     - For each section, first write the section title with the prefix "## " and then write the summary of the section with a new line.
      - The summary for each section should be written in a single paragraph, avoid bullet points, and it should be at least 1500 characters long but not more than 2000 characters.
      - Add markdown formatting and use **bold** formatting to emphasize key points.
 """
