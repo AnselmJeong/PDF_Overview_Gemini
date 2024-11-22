@@ -1,8 +1,6 @@
 import streamlit as st
 from streamlit_file_browser import st_file_browser
 
-# from streamlit_pdf_viewer import pdf_viewer
-# from streamlit_pdf_reader import pdf_reader
 from streamlit_dimensions import st_dimensions
 
 from pathlib import Path
@@ -33,7 +31,7 @@ SCROLL_HEIGHT = 2000
 # Create a file browser component in the sidebar
 with st.sidebar:
     st.markdown("## File Browser")
-    if root:= st.text_input("PDF Directory", placeholder="Directory to browse"):
+    if root := st.text_input("PDF Directory", placeholder="Directory to browse"):
         event = st_file_browser(
             path=root,
             key="file_browser",
@@ -51,7 +49,7 @@ pdf_content = None
 content = None
 
 info_container = st.container()
-col1, col2 = st.columns([1.5, 1])
+
 # Main content area
 with Session(engine) as session:
     if event and event["type"] == "SELECT_FILE":
@@ -61,21 +59,16 @@ with Session(engine) as session:
         if file_name:
             if raw_summary := get_summary(file_name, engine):
                 summary_content = format_summary(raw_summary)
-                
+
             else:
                 info_container.info(f"Summarizing {file_name}")
                 summary_content = main(pdf_path, write_md=False)
                 summary_content = format_summary(summary_content)
-                
-            
-            
+
             summary_content = re.sub(r"\*\*(.*?)\*\*", r":orange[\1]", summary_content)
 
-            # with open(pdf_path, "rb") as file:
-            #     pdf_content = file.read()
             pdf_content = pdf_path.read_bytes()
-        
-
+        col1, col2 = st.columns([1.5, 1])
         with col1.container(height=SCROLL_HEIGHT):
             if pdf_content:
                 pdf_viewer(

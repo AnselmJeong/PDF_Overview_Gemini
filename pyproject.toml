@@ -19,4 +19,9 @@ dependencies = [
     "streamlit-pdf-viewer>=0.0.19",
     "toml>=0.10.2",
     "watchdog>=6.0.0",
+    "docling>=2.7.0",
+    "langchain>=0.0.27",
+    "langchain-core>=0.3.19",
+    "langchain-openai>=0.2.9",
+    "py-zerox>=0.0.7",
 ]

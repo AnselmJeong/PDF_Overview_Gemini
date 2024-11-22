@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field, Column, JSON
 from pydantic import BaseModel
 from pydantic import Field as PField
 
+
 # Define your output structure
 class Essentials(BaseModel):
     title: str = PField(description="The title of the document", default="")
@@ -11,8 +12,10 @@ class Essentials(BaseModel):
     important_point: str = PField(description="An important point from the document", default="")
     toc: str = PField(description="A table of contents of the document", default="")
 
+
 class SectionSummaries(BaseModel):
     section_summaries: list[str] = PField(description="A list of summaries of the sections in a document", default=[])
+
 
 # class Summary(BaseModel):
 #     pdf_hash: str = PField(description="Hash of the document")
@@ -25,9 +28,10 @@ class SectionSummaries(BaseModel):
 #     toc: str | None = PField(description="A table of contents of the document")
 #     section_summaries: list[str] | None = PField(description="A list of section summaries of the document")
 
+
 class SummaryDB(SQLModel, table=True):
     pdf_stem: str = Field(primary_key=True)
-    file_handle: str | None = Field(default=None)
+    md_content: str | None = Field(default=None)
     title: str | None = Field(default=None)
     authors: list[str] | None = Field(default=None, sa_column=Column(JSON))
     tldr: str | None = Field(default=None)
