@@ -22,7 +22,7 @@ def save_summary(summary_db: SummaryDB, engine: Engine):
 
 
 def format_summary(summary: SummaryDB):
-    modified_section_summaries = [ss.replace("\\n", "\n") for ss in summary.section_summaries]
+    # modified_section_summaries = [ss.replace("\\n", "\n") for ss in summary.section_summaries]
 
     return f"""
 # {summary.title}\n\n
@@ -34,7 +34,8 @@ def format_summary(summary: SummaryDB):
 ### Important Point\n
 {summary.important_point}\n\n
 - - -
-{"\n\n".join(modified_section_summaries)}
+### Section Summaries
+{"\n\n".join(summary.section_summaries)}
 """
 
 

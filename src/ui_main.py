@@ -1,10 +1,12 @@
 import streamlit as st
+from streamlit import session_state as sss
 from streamlit_file_browser import st_file_browser
 
 from streamlit_dimensions import st_dimensions
 
 from pathlib import Path
 import re
+from openai import OpenAI
 
 from db import engine, get_summary, format_summary
 from sqlmodel import Session
@@ -12,6 +14,17 @@ from streamlit_pdf_viewer import pdf_viewer
 from main import main
 
 st.set_page_config(layout="wide")
+client = OpenAI()
+MODEL_NAME = "gpt-4o-mini"
+
+if "messages" not in sss:
+    sss.messages = []
+if "summary_content" not in sss:
+    sss.summary_content = ""
+if "md_content" not in sss:
+    sss.md_content = ""
+if "prompt" not in sss:
+    sss.prompt = ""
 
 
 st.markdown(
@@ -56,18 +69,20 @@ with Session(engine) as session:
         pdf_path = Path(root, event["target"]["path"])
         file_name = pdf_path.stem
         # pdf_path = file_path.parent / (file_name.replace('_overview', '') + '.pdf')
-        if file_name:
-            if raw_summary := get_summary(file_name, engine):
-                summary_content = format_summary(raw_summary)
+        if raw_summary := get_summary(file_name, engine):
+            sss.summary_content = format_summary(raw_summary)
+            sss.md_content = raw_summary.md_content
+        else:
+            info_container.info(f"Summarizing {file_name}")
+            with st.status("Summarizing...") as status:
+                sss.summary_content = main(pdf_path, write_md=False)
+                sss.md_content = sss.summary_content.md_content
+                sss.summary_content = format_summary(sss.summary_content)
 
-            else:
-                info_container.info(f"Summarizing {file_name}")
-                summary_content = main(pdf_path, write_md=False)
-                summary_content = format_summary(summary_content)
+        sss.summary_content = re.sub(r"\*\*(.*?)\*\*", r":orange[\1]", sss.summary_content)
 
-            summary_content = re.sub(r"\*\*(.*?)\*\*", r":orange[\1]", summary_content)
+        pdf_content = pdf_path.read_bytes()
 
-            pdf_content = pdf_path.read_bytes()
         col1, col2 = st.columns([1.5, 1])
         with col1.container(height=SCROLL_HEIGHT):
             if pdf_content:
@@ -79,8 +94,33 @@ with Session(engine) as session:
                 )
 
         with col2.container(height=SCROLL_HEIGHT):
-            md_container = st.container()
-            if summary_content:
-                md_container.markdown(summary_content)
+            with st.expander("Markdown", expanded=True):
+                md_container = st.container()
+            with st.expander("Chat", expanded=True):
+                chat_container = st.container()
+
+            if sss.summary_content:
+                md_container.markdown(sss.summary_content)
             else:
                 md_container.markdown("No summary found")
+
+            for message in sss.messages:
+                with chat_container.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            sss.prompt = chat_container.chat_input("Ask questions about the document")
+            if sss.prompt and sss.md_content != "":
+                # Add user message to chat history
+                sss.messages.append({"role": "user", "content": sss.prompt})
+                # Display user message in chat message container
+                with chat_container.chat_message("user"):
+                    st.markdown(sss.prompt)
+                with chat_container.chat_message("assistant"):
+                    stream = client.chat.completions.create(
+                        model=MODEL_NAME,
+                        messages=[{"role": m["role"], "content": m["content"]} for m in sss.messages]
+                        + [{"role": "user", "content": sss.md_content}],
+                        stream=True,
+                    )
+                    response = st.write_stream(stream)
+                    sss.messages.append({"role": "assistant", "content": response})

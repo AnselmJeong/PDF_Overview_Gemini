@@ -86,25 +86,26 @@ def summarize(pdf_path: Path) -> SummaryDB:
         return {"summary": summary_db, "exists": False}
 
 
-def directory_summarize(directory: Path):
+def directory_summarize(directory: Path, write_md: bool = False):
     for pdf_path in directory.glob("*.pdf"):
         print(f"Summarizing {pdf_path.stem}")
         payload = summarize(Path(pdf_path))
         if not payload["exists"]:
             save_summary(payload["summary"], engine)
-            write_summary(payload["summary"], pdf_path)
+            if write_md:
+                write_summary(payload["summary"], pdf_path)
 
 
 def main(pdf_path: Path | None = None, directory: Path | None = None, write_md: bool = False):
     if directory:
-        directory_summarize(directory)
+        directory_summarize(directory, write_md)
     else:
         payload = summarize(pdf_path)
         if not payload["exists"]:
             save_summary(payload["summary"], engine)
             if write_md:
                 write_summary(payload["summary"], pdf_path)
-    return payload["summary"]
+        return payload["summary"]
 
 
 if __name__ == "__main__":
