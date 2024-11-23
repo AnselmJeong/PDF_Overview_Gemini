@@ -12,10 +12,12 @@ from db import engine, get_summary, format_summary
 from sqlmodel import Session
 from streamlit_pdf_viewer import pdf_viewer
 from main import main
+from meta_prompt import generate_prompt
 
 st.set_page_config(layout="wide")
-client = OpenAI()
 MODEL_NAME = "gpt-4o-mini"
+client = OpenAI()
+
 
 if "messages" not in sss:
     sss.messages = []
@@ -25,6 +27,8 @@ if "md_content" not in sss:
     sss.md_content = ""
 if "prompt" not in sss:
     sss.prompt = ""
+if "file_name" not in sss:
+    sss.file_name = ""
 
 
 st.markdown(
@@ -67,13 +71,16 @@ info_container = st.container()
 with Session(engine) as session:
     if event and event["type"] == "SELECT_FILE":
         pdf_path = Path(root, event["target"]["path"])
-        file_name = pdf_path.stem
+        new_file_name = pdf_path.stem
+        if new_file_name != sss.file_name:
+            sss.messages = []
+        sss.file_name = new_file_name
         # pdf_path = file_path.parent / (file_name.replace('_overview', '') + '.pdf')
-        if raw_summary := get_summary(file_name, engine):
+        if raw_summary := get_summary(sss.file_name, engine):
             sss.summary_content = format_summary(raw_summary)
             sss.md_content = raw_summary.md_content
         else:
-            info_container.info(f"Summarizing {file_name}")
+            info_container.info(f"Summarizing {sss.file_name}")
             with st.status("Summarizing...") as status:
                 sss.summary_content = main(pdf_path, write_md=False)
                 sss.md_content = sss.summary_content.md_content
@@ -111,6 +118,8 @@ with Session(engine) as session:
             sss.prompt = chat_container.chat_input("Ask questions about the document")
             if sss.prompt and sss.md_content != "":
                 # Add user message to chat history
+                sss.prompt = generate_prompt(sss.prompt)
+                
                 sss.messages.append({"role": "user", "content": sss.prompt})
                 # Display user message in chat message container
                 with chat_container.chat_message("user"):

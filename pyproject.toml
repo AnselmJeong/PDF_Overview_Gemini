@@ -5,12 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "google-generativeai>=0.8.3",
     "instructor>=1.6.4",
     "ipykernel>=6.29.5",
     "ipywidgets>=8.1.5",
     "jupyterlab-widgets>=3.0.13",
-    "ollama>=0.3.3",
     "python-dotenv>=1.0.1",
     "sqlmodel>=0.0.22",
     "streamlit>=1.40.1",
@@ -22,6 +20,4 @@ dependencies = [
     "docling>=2.7.0",
     "langchain>=0.0.27",
     "langchain-core>=0.3.19",
-    "langchain-openai>=0.2.9",
-    "py-zerox>=0.0.7",
 ]
