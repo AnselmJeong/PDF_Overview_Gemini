@@ -1,8 +1,8 @@
-from sqlmodel import SQLModel, Field, Column, JSON
+from sqlmodel import SQLModel, Field, Column, JSON, Relationship
 from pydantic import BaseModel
 from pydantic import Field as PField
 
-
+# SQLModel.__table_args__ = {'extend_existing': True}
 # Define your output structure
 class Essentials(BaseModel):
     title: str = PField(description="The title of the document", default="")
@@ -39,3 +39,17 @@ class SummaryDB(SQLModel, table=True):
     important_point: str | None = Field(default=None)
     toc: str | None = Field(default=None)
     section_summaries: list[str] | None = Field(default=None, sa_column=Column(JSON))
+    chat_messages: list["ChatMessageDB"] | None = Relationship(back_populates="summary")
+    notes: list["NotesDB"] | None = Relationship(back_populates="summary")
+class ChatMessageDB(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    role: str
+    content: str
+    save: bool
+    pdf_stem: str | None = Field(default=None, foreign_key="summarydb.pdf_stem")
+    summary: SummaryDB | None = Relationship(back_populates="chat_messages")
+class NotesDB(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    notes: str
+    pdf_stem: str | None = Field(default=None, foreign_key="summarydb.pdf_stem")
+    summary: SummaryDB | None = Relationship(back_populates="notes")
