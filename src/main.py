@@ -1,4 +1,5 @@
 # %%
+import os
 import toml
 from pathlib import Path
 from instructor.exceptions import InstructorRetryException
@@ -12,9 +13,11 @@ from db import engine, save_summary, get_summary, write_summary, initialize_db
 from docling_loader import DoclingPDFLoader
 
 from argparse import ArgumentParser
-# load_dotenv()
+from dotenv import load_dotenv
 
-MODEL_NAME = "gpt-4o-mini"
+load_dotenv()
+
+MODEL_NAME = "deepseek-chat"
 PROMPTS_PATH = Path("src/prompts.toml")
 MAX_RETRIES = 3
 
@@ -28,7 +31,10 @@ SECTION_SUMMARIES_PROMPT = prompts["section_summaries"]["prompt"]
 
 # Initialize the client
 client = instructor.from_openai(
-    OpenAI(),
+    OpenAI(
+        api_key=os.getenv("DEEPSEEK_API_KEY"),
+        base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    ),
     mode=instructor.Mode.JSON,
 )
 
